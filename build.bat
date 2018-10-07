@@ -14,12 +14,12 @@ SET libgumbo_la_SOURCES= ^
 				src/utf8.c ^
 				src/util.c ^
 				src/vector.c ^
-				../texout.1.c
+				../texout.c
 SET include_HEADERS= src/gumbo.h src/tag_enum.h
 
 
 pushd gumbo-parser
-gcc %libgumbo_la_CFLAGS% %libgumbo_la_SOURCES% -o ../TTT
+gcc %libgumbo_la_CFLAGS% %libgumbo_la_SOURCES% -o ../TeXout
 popd
 
 REM echo %Apples%

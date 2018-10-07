@@ -11,6 +11,9 @@ typedef struct
 	char *Contents;
 } entire_file;
 
+// Stores the tag and attribute/value pair of the element we wish to find
+// Can create a list of these to represent a desired treversal of the parsetree
+// If the AttributeValue is NULL, we ignore it and only match the tag and name.
 typedef struct
 {
 	GumboTag Tag;
@@ -18,13 +21,17 @@ typedef struct
 	char *AttributeValue;
 } UniqueElement;
 
-UniqueElement NextChapterPath[] =
+UniqueElement WorkPath[] =
 {
 	{ GUMBO_TAG_BODY, "class" , "logged-out"},
 	{ GUMBO_TAG_DIV , "id" , "outer"},
 	{ GUMBO_TAG_DIV , "id" , "inner"},
 	{ GUMBO_TAG_DIV , "id" , "main"},
 	{ GUMBO_TAG_DIV , "class" , "work"},
+};
+
+UniqueElement NextChapterPath[] =
+{
 	{ GUMBO_TAG_UL , "class" , "work navigation actions"},
 	{ GUMBO_TAG_LI , "class" , "chapter next"},
 	{ GUMBO_TAG_A , "href" , 0},
@@ -142,7 +149,7 @@ main(int ArgCount, char **Args)
 	entire_file EntireFile = {0};
 
 	// Read/download the entire HTML file into a buffer here
-	FILE *Input = fopen("oim.html", "r");
+	FILE *Input = fopen(Args[1], "r");
 
 	if(Input)
 	{
@@ -160,17 +167,12 @@ main(int ArgCount, char **Args)
 
 	GumboOutput *ParseTree = gumbo_parse(EntireFile.Contents);
 
-	//char *NextChapterLink = FindNextChapter(ParseTree->root);
-	
-	/*GumboNode *Result =*/ //FindNode(ParseTree->root, Path, ArrayCount(Path));
-	const char *NextChapterLink = FindNextChapter(ParseTree->root);
-	printf("The link to the next chapter is archiveofoutown.org%s\n", NextChapterLink);
+	GumboNode *Work = FindNode(ParseTree->root, WorkPath, ArrayCount(WorkPath));
+	const char *NextChapterLink = FindNextChapter(Work);
+	printf("The link to the next chapter is archiveofourown.org%s\n", NextChapterLink);
 
 
 	gumbo_destroy_output(&kGumboDefaultOptions, ParseTree);
-
-	// Remove headers (change pointer, lower size)
-	// Actually, just remove certain parts of parse tree
 
 	// "Entire work" link, make tex; then append Next Work (entire work); and so on...
 	//char *NextWork = 0;

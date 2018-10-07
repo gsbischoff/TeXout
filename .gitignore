@@ -1,3 +1,4 @@
 gumbo-parser
 *.html
 *.exe
+*.log

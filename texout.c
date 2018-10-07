@@ -30,11 +30,30 @@ UniqueElement WorkPath[] =
 	{ GUMBO_TAG_DIV , "class" , "work"},
 };
 
+// All of the following paths are relative to WorkPath
+
 UniqueElement NextChapterPath[] =
 {
 	{ GUMBO_TAG_UL , "class" , "work navigation actions"},
 	{ GUMBO_TAG_LI , "class" , "chapter next"},
 	{ GUMBO_TAG_A , "href" , 0},
+};
+
+UniqueElement NextWorkPath[] =
+{
+	{ GUMBO_TAG_DIV , "class" , "wrapper"},
+	{ GUMBO_TAG_DL , "class" , "work meta group"},
+	{ GUMBO_TAG_DD , "class" , "series"},
+	{ GUMBO_TAG_SPAN , "class" , "series"},
+	{ GUMBO_TAG_A , "href" , 0},
+};
+
+UniqueElement Chapter[] =
+{
+	{ GUMBO_TAG_DIV , "id" , "workskin"},
+	{ GUMBO_TAG_DIV , "id" , "chapters"},
+	{ GUMBO_TAG_DIV , "class" , "chapter"},
+	{ GUMBO_TAG_DIV , "class" , "userstuff module"},
 };
 
 GumboNode *
@@ -108,11 +127,6 @@ FindNode(GumboNode *Root, UniqueElement *PathList, int Length)
 			Index < Length;
 			++Index)
 		{
-			if(!PathList[Index].AttributeValue)
-			{
-				printf("Doing the null-valued step!\n  Node is %s\n", Node?"V":"NULL");
-			}
-
 			Node = GetElementByAttribute(Node, PathList[Index]);
 
 			if(!Node)
@@ -128,6 +142,7 @@ FindNode(GumboNode *Root, UniqueElement *PathList, int Length)
 
 		if(Node)
 		{
+			#if 0
 			GumboElement *Element = &Node->v.element;
 			printf("Found element!\n");
 			printf("  ELEMENT\n");
@@ -135,7 +150,7 @@ FindNode(GumboNode *Root, UniqueElement *PathList, int Length)
 			printf("    End: %u\n", Element->end_pos.offset);
 			printf("    Children: %u\n", Element->children.length);
 			printf("    Tag: %.*s\n", (int)Element->original_tag.length, Element->original_tag.data);
-
+			#endif
 			return Node;
 		}
 	}
@@ -164,12 +179,62 @@ main(int ArgCount, char **Args)
 
 		printf("Read in %d bytes\n", EntireFile.Size);
 	}
+	else
+	{
+		fprintf(stderr, "%s\n", ArgCount == 2 ? "Could not open file!" : "usage: TeXout file.html");
+		return(0);
+	}
 
 	GumboOutput *ParseTree = gumbo_parse(EntireFile.Contents);
 
 	GumboNode *Work = FindNode(ParseTree->root, WorkPath, ArrayCount(WorkPath));
 	const char *NextChapterLink = FindNextChapter(Work);
 	printf("The link to the next chapter is archiveofourown.org%s\n", NextChapterLink);
+
+	GumboNode *Chap = FindNode(Work, Chapter, ArrayCount(Chapter));
+	printf("Chap has %u children!\n", Chap->v.element.children.length);
+
+	for(int i = 0; i < Chap->v.element.children.length; ++i)
+	{
+		GumboNode *Node = Chap->v.element.children.data[i];
+		if(Node->type == GUMBO_NODE_ELEMENT)
+		{
+			GumboElement *Element = &Node->v.element;
+			printf("[%u]ELEMENT\n", i);
+			printf("    Start: %u\n", Element->start_pos.offset);
+			printf("    End: %u\n", Element->end_pos.offset);
+			printf("    Children: %u\n", Element->children.length);
+			printf("    Tag: %.*s\n", (int)Element->original_tag.length, Element->original_tag.data);
+
+			for(int j = 0; j < Element->children.length; ++j)
+			{
+				GumboNode *Child = Element->children.data[j];
+				if(Child->type == GUMBO_NODE_ELEMENT)
+				{
+					GumboElement *CC = &Child->v.element;
+					printf("    [%u]CHILD\n", j);
+					printf("      Start: %u\n", CC->start_pos.offset);
+					printf("      End: %u\n", CC->end_pos.offset);
+					printf("      Children: %u\n", CC->children.length);
+					printf("      Tag: %.*s\n", (int)CC->original_tag.length, CC->original_tag.data);
+				}
+				else if(Child->type != GUMBO_NODE_DOCUMENT && Child->type != GUMBO_NODE_TEMPLATE)
+				{
+					GumboText *Text = &Child->v.text;
+					printf("    [%u]CTEXT\n", j);
+					printf("      Data: \"%.*s\"\n", (int)Text->original_text.length, Text->original_text.data);
+				}
+			}
+		}
+		else if(Node->type != GUMBO_NODE_DOCUMENT && Node->type != GUMBO_NODE_TEMPLATE)
+		{
+			GumboText *Text = &Node->v.text;
+			printf("[%u]TEXT\n", i);
+			printf("    Data: \"%.*s\"\n", (int)Text->original_text.length, Text->original_text.data);
+		}
+
+		if(i > 2) break;
+	}
 
 
 	gumbo_destroy_output(&kGumboDefaultOptions, ParseTree);
@@ -180,13 +245,6 @@ main(int ArgCount, char **Args)
 	//{
 	//	strtok(0, "\">");
 	//}
-
-	// Parse remainder
-	//tokenizer Tokenizer = {0};
-	//Tokenizer.At = EntireFile.Contents;
-	//GetStringToken(&Tokenizer, "<div class=\"wrapper\">");
-	
-
 
 
 
